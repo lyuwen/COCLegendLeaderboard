@@ -8,6 +8,16 @@ PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 class ClashOfClans:
+  """
+  Generic Clash of Clans API wrapper.
+
+  This wrapper can handle all the requests to the Clash of Clans API.
+
+  Paremeters
+  ----------
+  api_token : str
+      The API token for authentication.
+  """
 
 
   base_url = "https://api.clashofclans.com/v1"
@@ -19,6 +29,8 @@ class ClashOfClans:
 
   @property
   def headers(self):
+      """ The request headers.
+      """
       headers = {
           "Accept": "application/json",
           "authorization": "Bearer {api_token}".format(api_token=self.api_token),
@@ -26,7 +38,9 @@ class ClashOfClans:
       return headers
 
 
-  def request_player_info(self, player_tag):
+  def get_player_info(self, player_tag):
+      """ Get player info from player tag.
+      """
       url = self.base_url + "/players/" + quote(player_tag)
       respond = requests.get(url, headers=self.headers)
       if respond.status_code == 200:
@@ -35,8 +49,21 @@ class ClashOfClans:
           raise RuntimeError("Failed to obtain player information.")
 
 
-  def request_clan_info(self, clan_tag):
+  def get_clan_info(self, clan_tag):
+      """ Get clan info from clan tag.
+      """
       url = self.base_url + "/clans/" + quote(clan_tag)
+      respond = requests.get(url, headers=self.headers)
+      if respond.status_code == 200:
+          return respond.json()
+      else:
+          raise RuntimeError("Failed to obtain clan information.")
+
+
+  def get_league_info(self):
+      """ Get league info.
+      """
+      url = self.base_url + "/leagues"
       respond = requests.get(url, headers=self.headers)
       if respond.status_code == 200:
           return respond.json()
