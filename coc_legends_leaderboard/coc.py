@@ -69,6 +69,36 @@ class ClashOfClans:
           return respond.json()
       else:
           raise RuntimeError("Failed to obtain clan information.")
+          
+ 	
+  def get_sccwl_group_info(self, clan_tag):
+      url = self.base_url + '/clans/{clan_tag}/currentwar/leaguegroup'.format(clan_tag=quote(clan_tag))
+      respond = requests.get(url, headers=self.headers)
+      if respond.status_code == 200:
+          return respond.json()
+      else:
+          raise RuntimeError("Failed to obtain sccwl group information.")
+          
+          
+  def get_sccwl_lineup(self, clan_tag):
+      info = self.get_sccwl_group_info(clan_tag=clan_tag)
+      for clan in info['clans']:
+        if clan['tag'] == clan_tag:
+          current_clan = clan
+      return  current_clan['members']
+
+
+  def check_clan_pass_sccwl_scan(self, clan_tag, verbose=False):
+      lineup = self.get_sccwl_lineup(clan_tag=clan_tag)
+      for player in lineup:
+        try:
+          self.get_player_info(player['tag'])
+        except RuntimeError:
+          if verbose:
+            print('player {} ({}) not found, th{}'.format(player['name'], player['tag'], player['townHallLevel']))
+          return False
+      return True
+       
 
 
 if __name__ == "__main__":
