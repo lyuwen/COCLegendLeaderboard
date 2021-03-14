@@ -1,6 +1,8 @@
 import os
 import json
 import requests
+import datetime
+import dateutil.parser
 from urllib.parse import quote
 
 
@@ -141,7 +143,7 @@ class ClashOfClans:
             
       for member in war_info['opponent']['members']:
         for attack in member.get('attacks', []):
-          stars = format_stars(attack['stars'])
+          stars = format_stars(attack['stars'] )
           percent = '{:>3.2f}%'.format(attack['destructionPercentage'])
           attacks[attack['order']] = '{:<15s} <- {} {} -- {:>15s}'.format(
             player_names[attack['defenderTag']],
@@ -165,7 +167,19 @@ class ClashOfClans:
         if attack is not None:
           output.append(attack)
       output.append(separation)
-      output.append(war_info['state'])
+      #output.append(war_info['state'])
+      
+      if war_info['state'] == 'preparation':
+        now = datetime.datetime.utcnow().replace(microsecond=0)
+        starttime = dateutil.parser.parse(war_info['startTime']).replace(tzinfo=None)
+        delta = starttime - now
+        output.append('Preperation day. Battle day starts in {!s}.'.format(delta))
+      elif war_info['state'] == 'inWar':
+        now = datetime.datetime.utcnow().replace(microsecond=0)
+        endtime = dateutil.parser.parse(war_info['endTime']).replace(tzinfo=None)
+        delta = endtime - now
+        output.append('Battle day. Battle day ends in {!s}.'.format(delta))
+        
       print('\n'.join(output))
 
 
