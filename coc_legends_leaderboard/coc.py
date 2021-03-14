@@ -100,6 +100,75 @@ class ClashOfClans:
       return True
        
 
+  def get_current_war_info(self, clan_tag):
+      """ Get clan info from clan tag.
+      """
+      url = self.base_url + "/clans/" + quote(clan_tag) + "/currentwar"
+      respond = requests.get(url, headers=self.headers)
+      if respond.status_code == 200:
+          return respond.json()
+      else:
+          raise RuntimeError("Failed to obtain clan current war information.")
+          
+          
+  def print_current_war(self, clan_tag):
+      war_info = self.get_current_war_info(clan_tag)
+      player_names = {}
+      clan_name = war_info['clan']['name']
+      opponent_name = war_info['opponent']['name']
+      attacks = [None, ] * war_info['teamSize'] * 4 # at most 2 hits each player
+      clan_stars = war_info['clan']['stars']
+      clan_percent = war_info['clan']['destructionPercentage']
+      opponent_stars = war_info['opponent']['stars']
+      opponent_percent = war_info['opponent']['destructionPercentage']
+      
+      for member in war_info['clan']['members'] + war_info['opponent']['members']:
+        player_names[member['tag']] = member['name']
+        
+      def format_stars(stars):
+        return '⭐️' * stars + '   ' * (3 - stars)
+        
+      for member in war_info['clan']['members']:
+        for attack in member.get('attacks', []):
+          stars = format_stars(attack['stars'])
+          percent = '{:>3.2f}%'.format(attack['destructionPercentage'])
+          attacks[attack['order']] = '{:<15s} -- {} {} -> {:>15s}'.format(
+            player_names[attack['attackerTag']],
+            stars,
+            percent,
+            player_names[attack['defenderTag']],
+            )
+            
+      for member in war_info['opponent']['members']:
+        for attack in member.get('attacks', []):
+          stars = format_stars(attack['stars'])
+          percent = '{:>3.2f}%'.format(attack['destructionPercentage'])
+          attacks[attack['order']] = '{:<15s} <- {} {} -- {:>15s}'.format(
+            player_names[attack['defenderTag']],
+            stars,
+            percent,
+            player_names[attack['attackerTag']],
+            )        
+      
+      clan_percent_str = '{:>3.2f}%'.format(clan_percent)
+      opponent_percent_str = '{:>3.2f}%'.format(opponent_percent)
+      linewidth = 53
+      separation = '-' * linewidth
+      output = [
+        separation,
+        str.center('{:<15s} v {:>15s}'.format(clan_name, opponent_name), linewidth),
+        str.center('{:<15d} - {:>15d}'.format(clan_stars, opponent_stars), linewidth),
+        str.center('{:<15s} - {:>15s}'.format(clan_percent_str, opponent_percent_str), linewidth),
+        separation,
+        ]
+      for attack in attacks:
+        if attack is not None:
+          output.append(attack)
+      output.append(separation)
+      output.append(war_info['state'])
+      print('\n'.join(output))
+
+
 
 if __name__ == "__main__":
   api_token_file = "apitoken.in"
