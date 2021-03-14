@@ -250,9 +250,31 @@ def format_leaderboard(
     max_lines=None,
     name_pading=20,
     season_countdown=None,
-    seperator='-',
+    separator='-',
     center=False,
 ):
+    '''
+    Format the leaderboad data into text for discord post.
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        A Pandas DataFrame of the leaderboard.
+    title : str
+        The title of the leaderboard.
+    page_no : int, optional, default to 0
+        The page number. If the format limits the number of entries for a single page of the
+        leaderboard, the page number ``page_no`` will be displayed.
+    max_lines : int, optional, default to None
+        If not None, limit the number of lines for each page of leaderboard to ``max_lines``.
+    season_countdown : tuple(int, int), optional, default to None
+        The number of days and hours left for the current season. If provided, this info will
+        be displayed in the text.
+    separator        : str, optional, default to '-'
+        The line separator.
+    center           : bool, optional, default to False
+        Whether to center each line.
+    '''
     nlines = len(data)
     line_format = '{{rank:>{index_pad}}}. {{name:{name_pad}}} {gap} 🏆 {{trophies:>4}}'.format(
         index_pad=len(str(nlines)),
@@ -267,7 +289,7 @@ def format_leaderboard(
         linewidth = max(linewidth, len(title))
     content = [
         title.center(linewidth) if center else title,
-        seperator * linewidth,
+        separator * linewidth,
     ]
     for index, line in data.iloc[page_no * max_lines: (page_no + 1) * max_lines].T.items():
         rank = index + 1  # start rank with 1
@@ -279,7 +301,7 @@ def format_leaderboard(
         #  if center:
         #    line_content = line_content.center(linewidth)
         content.append(line_content)
-    content.append(seperator * linewidth)
+    content.append(separator * linewidth)
     if max_lines < nlines:
         content.append('Page {page_no}/{total_pages}'.format(
             page_no=page_no + 1,  # start from 1
