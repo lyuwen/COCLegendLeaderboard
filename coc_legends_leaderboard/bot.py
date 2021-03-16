@@ -241,5 +241,21 @@ async def players(ctx):
     await ctx.send(content)
 
 
+# list player tags
+@bot.command(name='credit')
+async def credit(ctx):
+    ''' Credit the author.
+    '''
+    content = textwrap.dedent('''\
+        ```
+        This package includes a discord bot, a python interface to Clash of Clans API,
+        and a set of algorithms that make the legend league leaderboard.
+        -
+        Created by MrFu
+        ```
+    ''')
+    await ctx.send(content)
+
+
 if __name__ == '__main__':
   bot.run(TOKEN)
