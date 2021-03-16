@@ -4,6 +4,7 @@ import requests
 import datetime
 import dateutil.parser
 from urllib.parse import quote
+from dotenv import load_dotenv
 
 
 PATH = os.path.dirname(os.path.abspath(__file__))
@@ -264,8 +265,6 @@ class ClashOfClans:
 
 
 if __name__ == "__main__":
-    # Here assume the API token is stored at the same directory of the code in the file 'apitoken.in'.
-    api_token_file = "apitoken.in"
-    with open(os.path.join(PATH, api_token_file), "r") as f:
-        api_token = f.read().strip()
+    load_dotenv()
+    api_token = os.getenv("COC_TOLEN")
     coc = ClashOfClans(api_token)

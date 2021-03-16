@@ -4,6 +4,7 @@ import logging
 import calendar
 import datetime
 import pandas as pd
+from dotenv import load_dotenv
 
 from coc import ClashOfClans
 
@@ -316,9 +317,8 @@ def format_leaderboard(
 
 
 if __name__ == '__main__':
-    api_token_file = 'apitoken.in'
-    with open(os.path.join(PATH, api_token_file), 'r') as f:
-        api_token = f.read().strip()
+    load_dotenv()
+    api_token = os.getenv("COC_TOLEN")
 
     lll = LegendsLeagueLeaderboard(
         filename='list_of_tags.txt',
