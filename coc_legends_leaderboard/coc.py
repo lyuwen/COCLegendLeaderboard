@@ -264,6 +264,32 @@ class ClashOfClans:
         print('\n'.join(output))
 
 
+    def verify_player(self, player_tag, token):
+        """ Verify player's account with in-game API token.
+
+        Parameters
+        ----------
+        player_tag : str, starts with '#'
+            The player tag '#...'.
+        token      : str
+            The API token.
+
+        Returns
+        -------
+        verification : bool
+            Whether the player is verified with the API token.
+        """
+        url = self.base_url + "/players/" + quote(player_tag) + "/verifytoken"
+        body = {
+            "token": token,
+        }
+        respond = requests.post(url, headers=self.headers, json=body)
+        if respond.status_code == 200:
+            return respond.json()['status'].lower() == "ok"
+        else:
+            raise RuntimeError("Failed to obtain player information.")
+            
+            
 if __name__ == "__main__":
     load_dotenv()
     api_token = os.getenv("COC_TOLEN")
