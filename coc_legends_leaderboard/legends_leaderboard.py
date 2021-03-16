@@ -368,7 +368,6 @@ def format_leaderboard(
             total_pages=math.ceil(nlines / max_lines),
         ))
     if len(data) > 0:
-        print(type(datetime.datetime.utcnow()), type(data.iloc[0]['timestamp']))
         content.append('Last refreshed: {} ago.'.format(format_timedelta(
             datetime.datetime.utcnow() - data.iloc[0]['timestamp'])))
     if season_countdown is not None:

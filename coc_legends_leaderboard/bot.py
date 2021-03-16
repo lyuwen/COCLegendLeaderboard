@@ -76,7 +76,21 @@ async def test_command(ctx):
 
 # show the ranking board
 @bot.command(name='rankings')
-async def rankings(ctx):
+async def rankings(ctx, *args):
+    if ('-h' in args) or ('--help' in args):
+        await ctx.send(textwrap.dedent('''\
+            ```
+            Usage !rankings [-h|--help] [-r|--refresh]
+
+              -h, --help        show this help message.
+              -r, --refresh     refresh the leaderboard before show ranking.
+            ```
+        '''))
+        return
+    elif ('-r' in args) or ('--refresh' in args):
+        logging.info('Refreshing leaderboard.')
+        current_leaderboard = lll.get_current_season_trophies()
+        save_leaderboard(lll.dbname, current_leaderboard)
     page_no = 0
     current_leaderboard = load_leaderboard(lll.dbname)
     content = format_leaderboard(
@@ -149,15 +163,15 @@ async def register(ctx, *args):
     if successful_players:
       msg1 = '\n'.join(['{} ({})'.format(name, tag) for tag, name in successful_players.items()])
       content.append(textwrap.dedent('''\
-          Successfully remove players:
+          Successfully register players:
             ```
             {}
             ```
-      '''.format(msg1)))
+      ''').format(msg1))
     if failed_tags:
       msg2 = ', '.join(failed_tags)
       content.append(textwrap.dedent('''\
-          Failed to remove players:
+          Failed to register players:
             ```
             {}
             ```
@@ -175,21 +189,41 @@ async def remove(ctx, *args):
     if removed_players:
       msg = ', '.join(removed_players)
       content = textwrap.dedent('''\
-          Failed to remove players:
+          Removed players:
             ```
             {}
             ```
-      '''.format(msg1))
+      '''.format(msg))
     await ctx.send(content)
 
 
 # refresh leaderboard
 @bot.command(name='refresh')
-async def remove(ctx):
+async def refresh(ctx):
     logging.info("Refreshing leaderboard")
     current_leaderboard = lll.get_current_season_trophies()
     save_leaderboard(lll.dbname, current_leaderboard)
     await ctx.send("Leaderboard has been refreshed.")
+
+
+# list player tags
+@bot.command(name='players')
+async def players(ctx):
+    lll.load_player_tags()
+    players = []
+    for player_tag in lll.player_tags:
+        try:
+            player_info = lll.coc.get_player_info(player_tag)
+            players.append("{} ({})".format(player_info['name'], player_info['tag']))
+        except RuntimeError:
+            logging.warning("Failed to find player info for tag: {}".format(player_tag))
+    content = textwrap.dedent("""\
+        Players registered:
+        ```
+        {}
+        ```
+    """).format("\n".join(players))
+    await ctx.send(content)
 
 
 if __name__ == '__main__':
