@@ -29,10 +29,11 @@ file `dotenv_example`, and put all the API tokens and the discord guild id for t
 * `!rankings`: Show the leaderboard.
 
     ```
-      Usage !rankings [-h|--help] [-r|--refresh]
+        Usage !rankings [-h|--help] [-r|--refresh] [-l|--last-season]
 
-        -h, --help        show this help message.
-        -r, --refresh     refresh the leaderboard before show ranking.
+          -h, --help          show this help message.
+          -r, --refresh       refresh the leaderboard before show ranking.
+          -l, --last-season   load last season's end-of-season leaderboard.
     ```
     
 * `!refresh`: Refresh the leaderboard.

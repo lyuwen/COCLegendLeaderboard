@@ -87,7 +87,7 @@ async def rankings(ctx, *args):
     if ('-h' in args) or ('--help' in args):
         await ctx.send(textwrap.dedent('''\
             ```
-            Usage !rankings [-h|--help] [-r|--refresh]
+            Usage !rankings [-h|--help] [-r|--refresh] [-l|--last-season]
 
               -h, --help          show this help message.
               -r, --refresh       refresh the leaderboard before show ranking.
