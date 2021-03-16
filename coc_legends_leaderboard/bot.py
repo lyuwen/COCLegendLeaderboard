@@ -168,12 +168,20 @@ async def register(ctx, *args):
     ''' Added player(s) to the leaderboard.
     '''
     logging.info("registering following players: {}".format(", ".join(args)))
-    successful_players, failed_tags = lll.register_players(player_tags=args)
+    successful_players, unqualified_players, failed_tags = lll.register_players(player_tags=args)
     content = []
     if successful_players:
       msg1 = '\n'.join(['{} ({})'.format(name, tag) for tag, name in successful_players.items()])
       content.append(textwrap.dedent('''\
           Successfully register players:
+            ```
+            {}
+            ```
+      ''').format(msg1))
+    if unqualified_players:
+      msg1 = '\n'.join(['{} ({})'.format(name, tag) for tag, name in unqualified_players.items()])
+      content.append(textwrap.dedent('''\
+          Unqualified players due to not in qualified clans:
             ```
             {}
             ```
@@ -208,6 +216,31 @@ async def remove(ctx, *args):
     await ctx.send(content)
 
 
+# register a clan
+@bot.command(name='register_clan')
+async def register_clan(ctx, arg):
+    ''' Added a clan into database.
+
+    If not empty, players who are in the registered
+    clans can register for the leaderboard.
+    '''
+    if lll.register_clan(arg):
+        await ctx.send("CLan {} added.".format(arg))
+    else:
+        await ctx.send("Failed to add cLan {}.".format(arg))
+
+
+# remove a clan
+@bot.command(name='remove_clan')
+async def remove_clan(ctx, arg):
+    ''' Remove a clan from database.
+    '''
+    if lll.remove_clan(arg):
+        await ctx.send("CLan {} added.".format(arg))
+    else:
+        await ctx.send("Failed to add cLan {}.".format(arg))
+
+
 # refresh leaderboard
 @bot.command(name='refresh')
 async def refresh(ctx):
@@ -238,6 +271,28 @@ async def players(ctx):
         {}
         ```
     """).format("\n".join(players))
+    await ctx.send(content)
+
+
+# list clan tags
+@bot.command(name='clans')
+async def clans(ctx):
+    ''' Show the list of all clans.
+    '''
+    lll.load_qualified_clans()
+    clans = []
+    for clan_tag in lll.qualified_clans:
+        try:
+            clan_info = lll.coc.get_clan_info(clan_tag)
+            clans.append("{} ({})".format(clan_info['name'], clan_info['tag']))
+        except RuntimeError:
+            logging.warning("Failed to find clan info for tag: {}".format(clan_tag))
+    content = textwrap.dedent("""\
+        Clan registered:
+        ```
+        {}
+        ```
+    """).format("\n".join(clans))
     await ctx.send(content)
 
 

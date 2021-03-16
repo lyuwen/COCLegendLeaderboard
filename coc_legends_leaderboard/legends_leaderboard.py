@@ -92,30 +92,50 @@ class LegendsLeagueLeaderboard:
         self.filename = filename
         self.coc = ClashOfClans(api_token=api_token)
         self.player_tags = []
+        self.qualified_clans = []
 
     def __enter__(self):
         self.load_player_tags()
+        self.load_qualified_clans()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.save_player_tags()
+        self.save_qualified_clans()
 
     def load_player_tags(self):
-        ''' Load player tags into a txt file.
+        ''' Load player tags from database.
         '''
         with sql.connect(os.path.join(PATH, self.dbname)) as con:
             try:
                 data = pd.read_sql("SELECT * FROM player_tags", con=con).set_index('index')
-                self.player_tags = data.squeeze().to_list()
+                self.player_tags = data.squeeze(axis=1).to_list()
             except pd.io.sql.DatabaseError:
                 self.player_tags = []
 
     def save_player_tags(self):
-        ''' Save player tags into a txt file.
+        ''' Save player tags into database.
         '''
         data = pd.Series(self.player_tags)
         with sql.connect(os.path.join(PATH, self.dbname)) as con:
             data.to_sql("player_tags", con=con, if_exists='replace')
+
+    def load_qualified_clans(self):
+        ''' Load qualifed clan tags from database.
+        '''
+        with sql.connect(os.path.join(PATH, self.dbname)) as con:
+            try:
+                data = pd.read_sql("SELECT * FROM qualified_clans", con=con).set_index('index')
+                self.qualified_clans = data.squeeze(axis=1).to_list()
+            except pd.io.sql.DatabaseError:
+                self.qualified_clans = []
+
+    def save_qualified_clans(self):
+        ''' Save qualifed clan tags into database.
+        '''
+        data = pd.Series(self.qualified_clans)
+        with sql.connect(os.path.join(PATH, self.dbname)) as con:
+            data.to_sql("qualified_clans", con=con, if_exists='replace')
 
     def register_players(self, player_tags):
         ''' Register players for the leaderboard.
@@ -129,20 +149,28 @@ class LegendsLeagueLeaderboard:
         -------
         successful_players : dict(str, str)
             The dictionary of player tags and player names that are successfully registered.
+        unqualified_players : dict(str, str)
+            The dictionary of player tags and player names that are not qualified to register
+            due to not in qualified clans.
         failed_tags : list of str
             List of tags that are failed to register.
         '''
         successful_players = {}
+        unqualified_players = {}
         failed_tags = []
         for player_tag in player_tags:
             try:
                 player = self.coc.get_player_info(player_tag)
-                successful_players[player['tag']] = player['name']
-                self.player_tags.append(player['tag'])
+                if (not self.qualified_clans) or (player['clan']['tag'] in self.qualified_clans):
+                    successful_players[player['tag']] = player['name']
+                    self.player_tags.append(player['tag'])
+                else:
+                    logging.warning("Player is in clan {} ({}), which is not qualified.".format(player['clan']['name'], player['clan']['tag']))
+                    unqualified_players[player['tag']] = player['name']
             except RuntimeError:
                 failed_tags.append(player_tag)
         self.save_player_tags()
-        return successful_players, failed_tags
+        return successful_players, unqualified_players, failed_tags
 
     def remove_players(self, player_tags):
         ''' Remove players.
@@ -160,6 +188,34 @@ class LegendsLeagueLeaderboard:
                 removed_players.append(player_tag)
         self.save_player_tags()
         return removed_players
+
+    def register_clan(self, clan_tag):
+        ''' Add a clan to registered clans.
+        '''
+        try:
+            clan_info = self.coc.get_clan_info(clan_tag)
+            self.qualified_clans.append(clan_info['tag'])
+            logging.info("Added clan {} into qualified clans.",format(clan_info['name']))
+            self.save_qualified_clans()
+            return True
+        except RuntimeError:
+            logging.warning("Failed to find the clan ({}).".format(clan_tag))
+            return False
+
+    def remove_clan(self, clan_tag):
+        ''' Remove clan.
+
+        Parameters
+        ----------
+        player_tags : list of str
+            Tags of players to register.
+        '''
+        if clan_tag in self.qualified_clans:
+            index = self.qualified_clans.index(clan_tag)
+            logging.info("Successfully removed clan: {}".format(self.qualified_clans.pop(index)))
+            self.save_qualified_clans()
+            return True
+        return False
 
     def _get_legends_day_cutoff(self, year, month):
         last_monday_this_month = get_last_monday_of_month(year, month)
