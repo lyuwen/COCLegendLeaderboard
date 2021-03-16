@@ -144,6 +144,23 @@ class LegendsLeagueLeaderboard:
         self.save_player_tags()
         return successful_players, failed_tags
 
+    def remove_players(self, player_tags):
+        ''' Remove players.
+
+        Parameters
+        ----------
+        player_tags : list of str
+            Tags of players to register.
+        '''
+        removed_players = []
+        for player_tag in player_tags:
+            if player_tag in self.player_tags:
+                index = self.player_tags.index(player_tag)
+                logging.info("Successfully removed player: {}".format(self.player_tags.pop(index)))
+                removed_players.append(player_tag)
+        self.save_player_tags()
+        return removed_players
+
     def _get_legends_day_cutoff(self, year, month):
         last_monday_this_month = get_last_monday_of_month(year, month)
 
@@ -351,6 +368,7 @@ def format_leaderboard(
             total_pages=math.ceil(nlines / max_lines),
         ))
     if len(data) > 0:
+        print(type(datetime.datetime.utcnow()), type(data.iloc[0]['timestamp']))
         content.append('Last refreshed: {} ago.'.format(format_timedelta(
             datetime.datetime.utcnow() - data.iloc[0]['timestamp'])))
     if season_countdown is not None:
@@ -367,6 +385,7 @@ def save_leaderboard(dbname, data):
 def load_leaderboard(dbname):
     with sql.connect(os.path.join(PATH, dbname)) as con:
         data = pd.read_sql('SELECT * FROM leaderboard', con=con).set_index('index')
+        data['timestamp'] = pd.to_datetime(data['timestamp'])
     return data
 
 
@@ -381,23 +400,23 @@ if __name__ == '__main__':
 
     lll.load_player_tags()
 
-    current_leaderboard = lll.get_current_season_trophies()
-
-    print(format_leaderboard(
-        data=current_leaderboard,
-        title=format_leaderboard_title(season=lll.current_season),
-        page_no=0,
-        max_lines=10,
-        center=1,
-        season_countdown=lll.get_countdown_current_season()
-    ))
-
-    last_leaderboard = lll.get_last_season_trophies()
-
-    print(format_leaderboard(
-        data=last_leaderboard,
-        title=format_leaderboard_title(season=lll.last_season),
-        page_no=0,
-        max_lines=10,
-        center=1,
-    ))
+    #  current_leaderboard = lll.get_current_season_trophies()
+    #
+    #  print(format_leaderboard(
+    #      data=current_leaderboard,
+    #      title=format_leaderboard_title(season=lll.current_season),
+    #      page_no=0,
+    #      max_lines=10,
+    #      center=1,
+    #      season_countdown=lll.get_countdown_current_season()
+    #  ))
+    #
+    #  last_leaderboard = lll.get_last_season_trophies()
+    #
+    #  print(format_leaderboard(
+    #      data=last_leaderboard,
+    #      title=format_leaderboard_title(season=lll.last_season),
+    #      page_no=0,
+    #      max_lines=10,
+    #      center=1,
+    #  ))

@@ -2,6 +2,7 @@ import os
 import math
 import random
 import logging
+import textwrap
 
 import discord
 from discord.ext import commands
@@ -11,6 +12,8 @@ from legends_leaderboard import (
     LegendsLeagueLeaderboard,
     format_leaderboard,
     format_leaderboard_title,
+    load_leaderboard,
+    save_leaderboard,
     )
 
 PATH = os.path.dirname(os.path.abspath(__file__))
@@ -39,7 +42,8 @@ page_no = 0
 lll.load_player_tags()
 
 global current_leaderboard
-current_leaderboard = lll.get_current_season_trophies()
+current_leaderboard = load_leaderboard(lll.dbname)
+#  current_leaderboard = lll.get_current_season_trophies()
 
 
 @bot.event
@@ -74,6 +78,7 @@ async def test_command(ctx):
 @bot.command(name='rankings')
 async def rankings(ctx):
     page_no = 0
+    current_leaderboard = load_leaderboard(lll.dbname)
     content = format_leaderboard(
         data=current_leaderboard,
         title=format_leaderboard_title(season=lll.current_season),
@@ -120,6 +125,7 @@ async def on_reaction_add(reaction, user):
     elif emoji == '🔄':
       page_no = 0
       current_leaderboard = lll.get_current_season_trophies()
+      save_leaderboard(lll.dbname, current_leaderboard)
     else:
       return
     content = format_leaderboard(
@@ -138,15 +144,52 @@ async def on_reaction_add(reaction, user):
 @bot.command(name='register')
 async def register(ctx, *args):
     logging.info("registering following players: {}".format(", ".join(args)))
-    pass
+    successful_players, failed_tags = lll.register_players(player_tags=args)
+    content = []
+    if successful_players:
+      msg1 = '\n'.join(['{} ({})'.format(name, tag) for tag, name in successful_players.items()])
+      content.append(textwrap.dedent('''\
+          Successfully remove players:
+            ```
+            {}
+            ```
+      '''.format(msg1)))
+    if failed_tags:
+      msg2 = ', '.join(failed_tags)
+      content.append(textwrap.dedent('''\
+          Failed to remove players:
+            ```
+            {}
+            ```
+      '''.format(msg2)))
+    await ctx.send("\n".join(content))
+
 
 
 # remove a player
 @bot.command(name='remove')
 async def remove(ctx, *args):
     logging.info("removing following players: {}".format(", ".join(args)))
-    pass
+    removed_players = lll.remove_players(args)
+    content = 'No player tag was removed.'
+    if removed_players:
+      msg = ', '.join(removed_players)
+      content = textwrap.dedent('''\
+          Failed to remove players:
+            ```
+            {}
+            ```
+      '''.format(msg1))
+    await ctx.send(content)
 
+
+# refresh leaderboard
+@bot.command(name='refresh')
+async def remove(ctx):
+    logging.info("Refreshing leaderboard")
+    current_leaderboard = lll.get_current_season_trophies()
+    save_leaderboard(lll.dbname, current_leaderboard)
+    await ctx.send("Leaderboard has been refreshed.")
 
 
 if __name__ == '__main__':
