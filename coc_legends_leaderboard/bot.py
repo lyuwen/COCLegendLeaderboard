@@ -48,6 +48,8 @@ current_leaderboard = load_leaderboard(lll.dbname)
 
 @bot.event
 async def on_ready():
+    ''' When the bot is loaded and ready.
+    '''
     for guild in bot.guilds:
         if guild.id == GUILD:
             break
@@ -61,6 +63,8 @@ async def on_ready():
 # test command
 @bot.command(name='test')
 async def test_command(ctx):
+    ''' A test command.
+    '''
     brooklyn_99_quotes = [
         'I\'m the human form of the 💯 emoji.',
         'Bingpot!',
@@ -77,6 +81,8 @@ async def test_command(ctx):
 # show the ranking board
 @bot.command(name='rankings')
 async def rankings(ctx, *args):
+    ''' Show leaderboard.
+    '''
     if ('-h' in args) or ('--help' in args):
         await ctx.send(textwrap.dedent('''\
             ```
@@ -110,6 +116,8 @@ async def rankings(ctx, *args):
 # turning pages
 @bot.event
 async def on_reaction_add(reaction, user):
+    ''' Flip pages in the leaderboard.
+    '''
     emoji = reaction.emoji
     message = reaction.message
 
@@ -157,6 +165,8 @@ async def on_reaction_add(reaction, user):
 # register a player
 @bot.command(name='register')
 async def register(ctx, *args):
+    ''' Added player(s) to the leaderboard.
+    '''
     logging.info("registering following players: {}".format(", ".join(args)))
     successful_players, failed_tags = lll.register_players(player_tags=args)
     content = []
@@ -179,10 +189,11 @@ async def register(ctx, *args):
     await ctx.send("\n".join(content))
 
 
-
 # remove a player
 @bot.command(name='remove')
 async def remove(ctx, *args):
+    ''' Remove player(s) from the leaderboard.
+    '''
     logging.info("removing following players: {}".format(", ".join(args)))
     removed_players = lll.remove_players(args)
     content = 'No player tag was removed.'
@@ -200,6 +211,8 @@ async def remove(ctx, *args):
 # refresh leaderboard
 @bot.command(name='refresh')
 async def refresh(ctx):
+    ''' Refresh the leaderboard.
+    '''
     logging.info("Refreshing leaderboard")
     current_leaderboard = lll.get_current_season_trophies()
     save_leaderboard(lll.dbname, current_leaderboard)
@@ -209,6 +222,8 @@ async def refresh(ctx):
 # list player tags
 @bot.command(name='players')
 async def players(ctx):
+    ''' Show the list of all players.
+    '''
     lll.load_player_tags()
     players = []
     for player_tag in lll.player_tags:

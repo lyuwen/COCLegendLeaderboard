@@ -377,11 +377,15 @@ def format_leaderboard(
 
 
 def save_leaderboard(dbname, data):
+    ''' Save leaderboard data into database.
+    '''
     with sql.connect(os.path.join(PATH, dbname)) as con:
         data.to_sql('leaderboard', con=con, if_exists='replace')
 
 
 def load_leaderboard(dbname):
+    ''' Load leaderboard from database.
+    '''
     with sql.connect(os.path.join(PATH, dbname)) as con:
         data = pd.read_sql('SELECT * FROM leaderboard', con=con).set_index('index')
         data['timestamp'] = pd.to_datetime(data['timestamp'])
