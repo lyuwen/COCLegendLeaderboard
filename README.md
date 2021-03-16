@@ -10,7 +10,7 @@ As part of the project, a python wrapper of the Clash of Clans API is developed 
 all the API requets.
 
 
-# Development guide
+## Development guide
 
 After cloning the repository, create a virtual environment and install all required python
 packages
@@ -23,4 +23,20 @@ pip install -U -r requirements.txt
 and go into the `coc_legends_leaderboard` directory and create an `.venv` file from the example
 file `dotenv_example`, and put all the API tokens and the discord guild id for the bot.
 
+
+## Bot command guide
+
+* `!rankings`: Show the leaderboard.
+
+    ```
+      Usage !rankings [-h|--help] [-r|--refresh]
+
+        -h, --help        show this help message.
+        -r, --refresh     refresh the leaderboard before show ranking.
+    ```
+    
+* `!refresh`: Refresh the leaderboard.
+* `!register`: Register player(s) to the leaderboard
+* `!remove`: Remove player(s) from the leaderboard
+* `!players`: Show the players that are participating the leaderboard. 
 
