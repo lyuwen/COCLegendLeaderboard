@@ -72,7 +72,7 @@ async def test_command(ctx):
 
 # show the ranking board
 @bot.command(name='rankings')
-async def nine_nine(ctx):
+async def rankings(ctx):
     page_no = 0
     content = format_leaderboard(
         data=current_leaderboard,
@@ -132,6 +132,21 @@ async def on_reaction_add(reaction, user):
     )
     await message.edit(content=content)
     await reaction.remove(user)
+
+
+# register a player
+@bot.command(name='register')
+async def register(ctx, *args):
+    logging.info("registering following players: {}".format(", ".join(args)))
+    pass
+
+
+# remove a player
+@bot.command(name='remove')
+async def remove(ctx, *args):
+    logging.info("removing following players: {}".format(", ".join(args)))
+    pass
+
 
 
 if __name__ == '__main__':

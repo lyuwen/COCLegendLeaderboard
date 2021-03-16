@@ -4,6 +4,7 @@ import logging
 import calendar
 import datetime
 import pandas as pd
+import sqlite3 as sql
 from dotenv import load_dotenv
 
 from coc import ClashOfClans
@@ -85,22 +86,63 @@ class LegendsLeagueLeaderboard:
     filename : the file to 
     '''
 
+    dbname = "database.db"
+
     def __init__(self, filename, api_token):
         self.filename = filename
         self.coc = ClashOfClans(api_token=api_token)
         self.player_tags = []
 
+    def __enter__(self):
+        self.load_player_tags()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.save_player_tags()
+
     def load_player_tags(self):
         ''' Load player tags into a txt file.
         '''
-        with open(self.filename, 'r') as f:
-            self.player_tags = f.read().strip().split()
+        with sql.connect(os.path.join(PATH, self.dbname)) as con:
+            try:
+                data = pd.read_sql("SELECT * FROM player_tags", con=con).set_index('index')
+                self.player_tags = data.squeeze().to_list()
+            except pd.io.sql.DatabaseError:
+                self.player_tags = []
 
     def save_player_tags(self):
         ''' Save player tags into a txt file.
         '''
-        with open(self.filename, 'w') as f:
-            f.write('\n'.join(self.player_tags))
+        data = pd.Series(self.player_tags)
+        with sql.connect(os.path.join(PATH, self.dbname)) as con:
+            data.to_sql("player_tags", con=con, if_exists='replace')
+
+    def register_players(self, player_tags):
+        ''' Register players for the leaderboard.
+
+        Parameters
+        ----------
+        player_tags : list of str
+            Tags of players to register.
+
+        Returns
+        -------
+        successful_players : dict(str, str)
+            The dictionary of player tags and player names that are successfully registered.
+        failed_tags : list of str
+            List of tags that are failed to register.
+        '''
+        successful_players = {}
+        failed_tags = []
+        for player_tag in player_tags:
+            try:
+                player = self.coc.get_player_info(player_tag)
+                successful_players[player['tag']] = player['name']
+                self.player_tags.append(player['tag'])
+            except RuntimeError:
+                failed_tags.append(player_tag)
+        self.save_player_tags()
+        return successful_players, failed_tags
 
     def _get_legends_day_cutoff(self, year, month):
         last_monday_this_month = get_last_monday_of_month(year, month)
@@ -308,12 +350,24 @@ def format_leaderboard(
             page_no=page_no + 1,  # start from 1
             total_pages=math.ceil(nlines / max_lines),
         ))
-    content.append('Last refreshed: {} ago.'.format(format_timedelta(
-        datetime.datetime.utcnow() - data.iloc[0]['timestamp'])))
+    if len(data) > 0:
+        content.append('Last refreshed: {} ago.'.format(format_timedelta(
+            datetime.datetime.utcnow() - data.iloc[0]['timestamp'])))
     if season_countdown is not None:
         content.append('Current season ends in {days} days {hours} hours.'.format(
             days=season_countdown[0], hours=season_countdown[1]))
     return '```\n{}\n```'.format('\n'.join(content))
+
+
+def save_leaderboard(dbname, data):
+    with sql.connect(os.path.join(PATH, dbname)) as con:
+        data.to_sql('leaderboard', con=con, if_exists='replace')
+
+
+def load_leaderboard(dbname):
+    with sql.connect(os.path.join(PATH, dbname)) as con:
+        data = pd.read_sql('SELECT * FROM leaderboard', con=con).set_index('index')
+    return data
 
 
 if __name__ == '__main__':
