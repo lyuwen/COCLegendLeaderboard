@@ -432,11 +432,12 @@ def format_leaderboard(
     return '```\n{}\n```'.format('\n'.join(content))
 
 
-def save_leaderboard(dbname, data):
+def save_leaderboard(dbname, data, season):
     ''' Save leaderboard data into database.
     '''
     with sql.connect(os.path.join(PATH, dbname)) as con:
         data.to_sql('leaderboard', con=con, if_exists='replace')
+        pd.Series(season).to_sql('season', con=con, if_exists='replace')
 
 
 def load_leaderboard(dbname):
@@ -445,7 +446,9 @@ def load_leaderboard(dbname):
     with sql.connect(os.path.join(PATH, dbname)) as con:
         data = pd.read_sql('SELECT * FROM leaderboard', con=con).set_index('index')
         data['timestamp'] = pd.to_datetime(data['timestamp'])
-    return data
+        season = pd.read_sql("SELECT * FROM season", con=con).set_index('index')
+        season = season.squeeze()
+    return data, season
 
 
 if __name__ == '__main__':

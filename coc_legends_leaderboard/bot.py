@@ -42,7 +42,8 @@ page_no = 0
 lll.load_player_tags()
 
 global current_leaderboard
-current_leaderboard = load_leaderboard(lll.dbname)
+global season
+current_leaderboard, season = load_leaderboard(lll.dbname)
 #  current_leaderboard = lll.get_current_season_trophies()
 
 
@@ -88,24 +89,31 @@ async def rankings(ctx, *args):
             ```
             Usage !rankings [-h|--help] [-r|--refresh]
 
-              -h, --help        show this help message.
-              -r, --refresh     refresh the leaderboard before show ranking.
+              -h, --help          show this help message.
+              -r, --refresh       refresh the leaderboard before show ranking.
+              -l, --last-season   load last season's end-of-season leaderboard.
             ```
         '''))
         return
     elif ('-r' in args) or ('--refresh' in args):
         logging.info('Refreshing leaderboard.')
         current_leaderboard = lll.get_current_season_trophies()
-        save_leaderboard(lll.dbname, current_leaderboard)
+        season = lll.current_season
+        save_leaderboard(lll.dbname, current_leaderboard, season)
+    elif ('-l' in args) or ('--last-season' in args):
+        logging.info('Refreshing leaderboard.')
+        current_leaderboard = lll.get_last_season_trophies()
+        season = lll.last_season
+        save_leaderboard(lll.dbname, current_leaderboard, season)
     page_no = 0
-    current_leaderboard = load_leaderboard(lll.dbname)
+    current_leaderboard, season = load_leaderboard(lll.dbname)
     content = format_leaderboard(
         data=current_leaderboard,
-        title=format_leaderboard_title(season=lll.current_season),
+        title=format_leaderboard_title(season=season),
         page_no=page_no,
         max_lines=max_lines,
         center=1,
-        season_countdown=lll.get_countdown_current_season()
+        season_countdown=lll.get_countdown_current_season() if season == lll.current_season else None,
     )
     message_sent = await ctx.send(content)
     for emoji in '⏮ ⏪ ⏩ ⏭ 🔄'.split():
@@ -129,6 +137,9 @@ async def on_reaction_add(reaction, user):
 
     global page_no
     global current_leaderboard
+    global season
+
+    current_leaderboard, season = load_leaderboard(lll.dbname)
 
     page_max = math.ceil(len(current_leaderboard) / max_lines)
 
@@ -147,16 +158,17 @@ async def on_reaction_add(reaction, user):
     elif emoji == '🔄':
       page_no = 0
       current_leaderboard = lll.get_current_season_trophies()
-      save_leaderboard(lll.dbname, current_leaderboard)
+      season = lll.current_season
+      save_leaderboard(lll.dbname, current_leaderboard, season)
     else:
       return
     content = format_leaderboard(
         data=current_leaderboard,
-        title=format_leaderboard_title(season=lll.current_season),
+        title=format_leaderboard_title(season=season),
         page_no=page_no,
         max_lines=max_lines,
         center=1,
-        season_countdown=lll.get_countdown_current_season()
+        season_countdown=lll.get_countdown_current_season() if season == lll.current_season else None,
     )
     await message.edit(content=content)
     await reaction.remove(user)
@@ -248,7 +260,7 @@ async def refresh(ctx):
     '''
     logging.info("Refreshing leaderboard")
     current_leaderboard = lll.get_current_season_trophies()
-    save_leaderboard(lll.dbname, current_leaderboard)
+    save_leaderboard(lll.dbname, current_leaderboard, lll.current_season)
     await ctx.send("Leaderboard has been refreshed.")
 
 
