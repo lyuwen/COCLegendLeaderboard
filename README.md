@@ -69,7 +69,12 @@ Here are features available in COC python API module:
 Features for bot:
 
 * Add a daemon to refresh the leaderboard regularly in the background.
+* Make the max number of lines for each page configurable.
+* Make prefix of the command configurable.
 
 Features for COC python API:
 
 * Add the rest of the API request types that are supported by Clash of Clans API.
+
+Currently the support for multipld discord servers (guilds) are not considered.
+As the current project is intended for smaller scales.
