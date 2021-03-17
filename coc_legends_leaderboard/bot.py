@@ -47,6 +47,13 @@ current_leaderboard, season = load_leaderboard(lll.dbname)
 #  current_leaderboard = lll.get_current_season_trophies()
 
 
+def check_adimin_perm(ctx):
+    channel = ctx.message.channel
+    user = ctx.author
+    perm = channel.permissions_for(user)
+    return perm.administrator
+
+
 @bot.event
 async def on_ready():
     ''' When the bot is loaded and ready.
@@ -236,6 +243,8 @@ async def register_clan(ctx, arg):
     If not empty, players who are in the registered
     clans can register for the leaderboard.
     '''
+    if not check_adimin_perm(ctx):
+        ctx.send("User does not have sufficient permission to register a clan.")
     if lll.register_clan(arg):
         await ctx.send("CLan {} added.".format(arg))
     else:
@@ -247,6 +256,8 @@ async def register_clan(ctx, arg):
 async def remove_clan(ctx, arg):
     ''' Remove a clan from database.
     '''
+    if not check_adimin_perm(ctx):
+        ctx.send("User does not have sufficient permission to remove a clan.")
     if lll.remove_clan(arg):
         await ctx.send("CLan {} added.".format(arg))
     else:
