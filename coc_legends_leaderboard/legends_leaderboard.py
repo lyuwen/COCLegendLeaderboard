@@ -137,7 +137,7 @@ class LegendsLeagueLeaderboard:
         with sql.connect(os.path.join(PATH, self.dbname)) as con:
             data.to_sql("qualified_clans", con=con, if_exists='replace')
 
-    def register_players(self, player_tags):
+    async def register_players(self, player_tags):
         ''' Register players for the leaderboard.
 
         Parameters
@@ -160,7 +160,7 @@ class LegendsLeagueLeaderboard:
         failed_tags = []
         for player_tag in player_tags:
             try:
-                player = self.coc.get_player_info(player_tag)
+                player = await self.coc.get_player_info(player_tag)
                 if (not self.qualified_clans) or (player['clan']['tag'] in self.qualified_clans):
                     successful_players[player['tag']] = player['name']
                     self.player_tags.append(player['tag'])
@@ -189,11 +189,11 @@ class LegendsLeagueLeaderboard:
         self.save_player_tags()
         return removed_players
 
-    def register_clan(self, clan_tag):
+    async def register_clan(self, clan_tag):
         ''' Add a clan to registered clans.
         '''
         try:
-            clan_info = self.coc.get_clan_info(clan_tag)
+            clan_info = await self.coc.get_clan_info(clan_tag)
             self.qualified_clans.append(clan_info['tag'])
             logging.info("Added clan {} into qualified clans.",format(clan_info['name']))
             self.save_qualified_clans()
@@ -254,7 +254,7 @@ class LegendsLeagueLeaderboard:
         last_month_year, last_month_month = get_last_month(year, month)
         return '{year:04}-{month:02}'.format(year=last_month_year, month=last_month_month)
 
-    def _get_last_season_trophies(self):
+    async def _get_last_season_trophies(self):
         last_season = self.last_season
 
         legend_player_trophies = []
@@ -266,7 +266,7 @@ class LegendsLeagueLeaderboard:
         logging.info('Last season is: {}'.format(last_season))
 
         for player_tag in self.player_tags:
-            player_info = self.coc.get_player_info(player_tag)
+            player_info = await self.coc.get_player_info(player_tag)
             if ('legendStatistics' not in player_info) \
                     or ('previousSeason' not in player_info['legendStatistics']) \
                     or (player_info['legendStatistics']['previousSeason']['id'] != last_season):
@@ -281,7 +281,7 @@ class LegendsLeagueLeaderboard:
                 legend_player_tags.append(player_info['tag'])
         return legend_player_tags, legend_player_names, legend_player_trophies
 
-    def get_last_season_trophies(self):
+    async def get_last_season_trophies(self):
         '''
         Get last season legend leaderboard.
 
@@ -292,7 +292,7 @@ class LegendsLeagueLeaderboard:
         dataframe  :  pandas.DataFrame
             A Pandas DataFrame of the last season leaderboard, sorted.
         '''
-        legend_player_tags, legend_player_names, legend_player_trophies = self._get_last_season_trophies()
+        legend_player_tags, legend_player_names, legend_player_trophies = await self._get_last_season_trophies()
         dataframe = pd.DataFrame({
             'player_tag': legend_player_tags,
             'name': legend_player_names,
@@ -301,7 +301,7 @@ class LegendsLeagueLeaderboard:
         })
         return dataframe.sort_values(by='trophies', ascending=False).reset_index(drop=True)
 
-    def _get_current_season_trophies(self):
+    async def _get_current_season_trophies(self):
         legend_player_trophies = []
         legend_player_names = []
         legend_player_tags = []
@@ -309,7 +309,7 @@ class LegendsLeagueLeaderboard:
         legend_id = 29000022
 
         for player_tag in self.player_tags:
-            player_info = self.coc.get_player_info(player_tag)
+            player_info = await self.coc.get_player_info(player_tag)
             if not player_info.get('league', {}).get('id', 0) == legend_id:
                 # player is not in legend league
                 logging.warning('Player {player_tag} not in Legend League, skip.'.format(
@@ -321,7 +321,7 @@ class LegendsLeagueLeaderboard:
                 legend_player_tags.append(player_info['tag'])
         return legend_player_tags, legend_player_names, legend_player_trophies
 
-    def get_current_season_trophies(self):
+    async def get_current_season_trophies(self):
         '''
         Get current season legend leaderboard.
 
@@ -330,7 +330,7 @@ class LegendsLeagueLeaderboard:
         dataframe  :  pandas.DataFrame
             A Pandas DataFrame of the current season leaderboard, sorted.
         '''
-        legend_player_tags, legend_player_names, legend_player_trophies = self._get_current_season_trophies()
+        legend_player_tags, legend_player_names, legend_player_trophies = await self._get_current_season_trophies()
         dataframe = pd.DataFrame({
             'player_tag': legend_player_tags,
             'name': legend_player_names,

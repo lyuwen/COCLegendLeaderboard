@@ -104,12 +104,12 @@ async def rankings(ctx, *args):
         return
     elif ('-r' in args) or ('--refresh' in args):
         logging.info('Refreshing leaderboard.')
-        current_leaderboard = lll.get_current_season_trophies()
+        current_leaderboard = await lll.get_current_season_trophies()
         season = lll.current_season
         save_leaderboard(lll.dbname, current_leaderboard, season)
     elif ('-l' in args) or ('--last-season' in args):
         logging.info('Refreshing leaderboard.')
-        current_leaderboard = lll.get_last_season_trophies()
+        current_leaderboard = await lll.get_last_season_trophies()
         season = lll.last_season
         save_leaderboard(lll.dbname, current_leaderboard, season)
     page_no = 0
@@ -164,7 +164,7 @@ async def on_reaction_add(reaction, user):
         page_no = page_max - 1
     elif emoji == '🔄':
       page_no = 0
-      current_leaderboard = lll.get_current_season_trophies()
+      current_leaderboard = await lll.get_current_season_trophies()
       season = lll.current_season
       save_leaderboard(lll.dbname, current_leaderboard, season)
     else:
@@ -187,7 +187,7 @@ async def register(ctx, *args):
     ''' Added player(s) to the leaderboard.
     '''
     logging.info("registering following players: {}".format(", ".join(args)))
-    successful_players, unqualified_players, failed_tags = lll.register_players(player_tags=args)
+    successful_players, unqualified_players, failed_tags = await lll.register_players(player_tags=args)
     content = []
     if successful_players:
       msg1 = '\n'.join(['{} ({})'.format(name, tag) for tag, name in successful_players.items()])
@@ -245,7 +245,7 @@ async def register_clan(ctx, arg):
     '''
     if not check_adimin_perm(ctx):
         ctx.send("User does not have sufficient permission to register a clan.")
-    if lll.register_clan(arg):
+    if await lll.register_clan(arg):
         await ctx.send("CLan {} added.".format(arg))
     else:
         await ctx.send("Failed to add cLan {}.".format(arg))
@@ -270,7 +270,7 @@ async def refresh(ctx):
     ''' Refresh the leaderboard.
     '''
     logging.info("Refreshing leaderboard")
-    current_leaderboard = lll.get_current_season_trophies()
+    current_leaderboard = await lll.get_current_season_trophies()
     save_leaderboard(lll.dbname, current_leaderboard, lll.current_season)
     await ctx.send("Leaderboard has been refreshed.")
 

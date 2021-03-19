@@ -1,12 +1,15 @@
 import os
 import json
-import requests
+import aiohttp
+import asyncio
+import logging
 import datetime
 import dateutil.parser
 from urllib.parse import quote
 from dotenv import load_dotenv
 
 
+logging.basicConfig(level=logging.INFO)
 PATH = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -37,7 +40,7 @@ class ClashOfClans:
         }
         return headers
 
-    def get_player_info(self, player_tag):
+    async def get_player_info(self, player_tag):
         """ Get player info from player tag.
 
         Parameters
@@ -51,13 +54,14 @@ class ClashOfClans:
             A dictionary of the JSON data returned from the request.
         """
         url = self.base_url + "/players/" + quote(player_tag)
-        respond = requests.get(url, headers=self.headers)
-        if respond.status_code == 200:
-            return respond.json()
-        else:
-            raise RuntimeError("Failed to obtain player information.")
+        async with aiohttp.ClientSession() as session:
+          async with session.get(url, headers=self.headers) as respond:
+            if respond.status == 200:
+                return await respond.json()
+            else:
+                raise RuntimeError("Failed to obtain player information.")
 
-    def get_clan_info(self, clan_tag):
+    async def get_clan_info(self, clan_tag):
         """ Get clan info from clan tag.
 
         Parameters
@@ -71,13 +75,14 @@ class ClashOfClans:
             A dictionary of the JSON data returned from the request.
         """
         url = self.base_url + "/clans/" + quote(clan_tag)
-        respond = requests.get(url, headers=self.headers)
-        if respond.status_code == 200:
-            return respond.json()
-        else:
-            raise RuntimeError("Failed to obtain clan information.")
+        async with aiohttp.ClientSession() as session:
+          async with session.get(url, headers=self.headers) as respond:
+            if respond.status == 200:
+                return await respond.json()
+            else:
+                raise RuntimeError("Failed to obtain clan information.")
 
-    def get_league_info(self):
+    async def get_league_info(self):
         """ Get home village trophy league info.
 
         Returns
@@ -86,13 +91,14 @@ class ClashOfClans:
             A dictionary of the JSON data returned from the request.
         """
         url = self.base_url + "/leagues"
-        respond = requests.get(url, headers=self.headers)
-        if respond.status_code == 200:
-            return respond.json()
-        else:
-            raise RuntimeError("Failed to obtain clan information.")
+        async with aiohttp.ClientSession() as session:
+          async with session.get(url, headers=self.headers) as respond:
+            if respond.status == 200:
+                return await respond.json()
+            else:
+                raise RuntimeError("Failed to obtain clan information.")
 
-    def get_sccwl_group_info(self, clan_tag):
+    async def get_sccwl_group_info(self, clan_tag):
         """ Get the league group info of current SCCWL season of the clan.
 
         Parameters
@@ -108,13 +114,14 @@ class ClashOfClans:
         url = self.base_url + \
             '/clans/{clan_tag}/currentwar/leaguegroup'.format(
                 clan_tag=quote(clan_tag))
-        respond = requests.get(url, headers=self.headers)
-        if respond.status_code == 200:
-            return respond.json()
-        else:
-            raise RuntimeError("Failed to obtain sccwl group information.")
+        async with aiohttp.ClientSession() as session:
+          async with session.get(url, headers=self.headers) as respond:
+            if respond.status == 200:
+                return await respond.json()
+            else:
+                raise RuntimeError("Failed to obtain sccwl group information.")
 
-    def get_sccwl_lineup(self, clan_tag):
+    async def get_sccwl_lineup(self, clan_tag):
         """ Get the SCCWL lineup of the clan of the current season.
 
         Parameters
@@ -127,13 +134,13 @@ class ClashOfClans:
         lineup : list
             List of members that are in the SCCWL spin.
         """
-        info = self.get_sccwl_group_info(clan_tag=clan_tag)
+        info = await self.get_sccwl_group_info(clan_tag=clan_tag)
         for clan in info['clans']:
             if clan['tag'] == clan_tag:
                 current_clan = clan
         return current_clan['members']
 
-    def check_clan_pass_sccwl_scan(self, clan_tag, verbose=False):
+    async def check_clan_pass_sccwl_scan(self, clan_tag, verbose=False):
         """ Check if clan has banned members after SCCWL.
 
         Parameters
@@ -148,18 +155,18 @@ class ClashOfClans:
         flag : bool
             If True, clan does not have banned members, vice versa.
         """
-        lineup = self.get_sccwl_lineup(clan_tag=clan_tag)
+        lineup = await self.get_sccwl_lineup(clan_tag=clan_tag)
         for player in lineup:
             try:
-                self.get_player_info(player['tag'])
+                await self.get_player_info(player['tag'])
             except RuntimeError:
                 if verbose:
-                    print('player {} ({}) not found, th{}'.format(
+                    logging.warning('player {} ({}) not found, th{}'.format(
                         player['name'], player['tag'], player['townHallLevel']))
                 return False
         return True
 
-    def get_current_war_info(self, clan_tag):
+    async def get_current_war_info(self, clan_tag):
         """ Get current war info from clan tag.
 
         Parameters
@@ -173,14 +180,15 @@ class ClashOfClans:
             A dictionary of the JSON data returned from the request.
         """
         url = self.base_url + "/clans/" + quote(clan_tag) + "/currentwar"
-        respond = requests.get(url, headers=self.headers)
-        if respond.status_code == 200:
-            return respond.json()
-        else:
-            raise RuntimeError(
-                "Failed to obtain clan current war information.")
+        async with aiohttp.ClientSession() as session:
+          async with session.get(url, headers=self.headers) as respond:
+            if respond.status == 200:
+                return await respond.json()
+            else:
+                raise RuntimeError(
+                    "Failed to obtain clan current war information.")
 
-    def print_current_war(self, clan_tag):
+    async def print_current_war(self, clan_tag):
         """ Print out the status of the current war of the clan.
 
         Parameters
@@ -188,7 +196,7 @@ class ClashOfClans:
         clan_tag : str, starts with '#'
             The clan tag '#...'.
         """
-        war_info = self.get_current_war_info(clan_tag)
+        war_info = await self.get_current_war_info(clan_tag)
         player_names = {}
         clan_name = war_info['clan']['name']
         opponent_name = war_info['opponent']['name']
@@ -264,7 +272,7 @@ class ClashOfClans:
         print('\n'.join(output))
 
 
-    def verify_player(self, player_tag, token):
+    async def verify_player(self, player_tag, token):
         """ Verify player's account with in-game API token.
 
         Parameters
@@ -283,11 +291,13 @@ class ClashOfClans:
         body = {
             "token": token,
         }
-        respond = requests.post(url, headers=self.headers, json=body)
-        if respond.status_code == 200:
-            return respond.json()['status'].lower() == "ok"
-        else:
-            raise RuntimeError("Failed to obtain player information.")
+        async with aiohttp.ClientSession() as session:
+          async with session.get(url, headers=self.headers) as respond:
+            if respond.status == 200:
+                status = await respond.json()['status']
+                return status.lower() == "ok"
+            else:
+                raise RuntimeError("Failed to obtain player information.")
             
             
 if __name__ == "__main__":
