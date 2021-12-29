@@ -59,7 +59,7 @@ class ClashOfClans:
             if respond.status == 200:
                 return await respond.json()
             else:
-                raise RuntimeError("Failed to obtain player information.")
+                raise RuntimeError(f"Failed to obtain player information. {player_tag}")
 
     async def get_clan_info(self, clan_tag):
         """ Get clan info from clan tag.

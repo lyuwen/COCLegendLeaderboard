@@ -74,7 +74,10 @@ def get_next_month(year, month):
     month : int
         Month of next month.
     '''
-    return calendar.nextmonth(year=year, month=month)
+    if month == 12:
+      return year + 1, 1
+    else:
+      return year, month + 1
 
 
 class LegendsLeagueLeaderboard:
